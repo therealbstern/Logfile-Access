@@ -2,10 +2,10 @@ Access(3)             User Contributed Perl Documentation            Access(3)
 
 
 
-NNAAMMEE
+NAME
        Logfile::Access - Perl extension for common log format web server logs
 
-SSYYNNOOPPSSIISS
+SYNOPSIS
          use Logfile::Access;
 
                my $log = new Logfile::Access;
@@ -18,10 +18,10 @@ SSYYNNOOPPSSIISS
                  }
                close IN;
 
-AABBSSTTRRAACCTT
+ABSTRACT
                A module for parsing common log format web server access log files.
 
-DDEESSCCRRIIPPTTIIOONN
+DESCRIPTION
                new() - defines new logfile row object
 
                load_mime_types() - loads mime types for filename extensions
@@ -30,7 +30,7 @@ DDEESSCCRRIIPPTTIIOONN
 
                print() - outputs the data to a common log format row
 
-       rreemmoottee__hhoosstt rreellaatteedd ffuunnccttiioonnss
+       rreemmoottee__hhoosstt rreellaatteedd ffuunnccttiioonnss
 
                class_a() - returns the Class A of the remote_host
 
@@ -46,13 +46,13 @@ DDEESSCCRRIIPPTTIIOONN
 
                remote_host() - returns / sets the remote host
 
-       aauutthheennttiiccaattiioonn rreellaatteedd ffuunnccttiioonnss
+       aauutthheennttiiccaattiioonn rreellaatteedd ffuunnccttiioonnss
 
                logname() - returns / sets the logname
 
                user() - returns / sets the user name
 
-       ddaattee aanndd ttiimmee rreellaatteedd ffuunnccttiioonnss
+       ddaattee aanndd ttiimmee rreellaatteedd ffuunnccttiioonnss
 
                date() - returns / sets the CLF date
 
@@ -72,7 +72,7 @@ DDEESSCCRRIIPPTTIIOONN
 
                offset() - returns / sets the GMT offset
 
-       rreeqquueesstt oobbjjeecctt rreellaatteedd ffuunnccttiioonnss
+       rreeqquueesstt oobbjjeecctt rreellaatteedd ffuunnccttiioonnss
 
                method() - returns / sets the request method
 
@@ -92,7 +92,7 @@ DDEESSCCRRIIPPTTIIOONN
 
                protocol() - returns / sets the request protocol
 
-       rreessppoonnssee ccooddee rreellaatteedd ffuunnccttiioonnss
+       rreessppoonnssee ccooddee rreellaatteedd ffuunnccttiioonnss
 
                response_code() - returns / sets the numeric response code
 
@@ -102,22 +102,22 @@ DDEESSCCRRIIPPTTIIOONN
 
                http_user_agent() - returns / sets the http user agent string
 
-       EEXXPPOORRTT
+       EXPORT
 
        None by default.
 
-PPRREERREEQQUUIISSIITTEESS
+PREREQUISITES
                use Locale::Country;
                use URI;
                use URI::Escape;
 
-SSEEEE AALLSSOO
+SEE ALSO
        http://www.apache.org/
 
-AAUUTTHHOORR
+AUTHOR
        David Tiberio, <dtiberio5@hotmail.com>
 
-CCOOPPYYRRIIGGHHTT AANNDD LLIICCEENNSSEE
+COPYRIGHT AND LICENSE
        Copyright 2004 David Tiberio, dtiberio5@hotmail.com
 
        This library is free software; you can redistribute it and/or modify it
