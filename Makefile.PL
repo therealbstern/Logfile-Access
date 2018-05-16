@@ -5,8 +5,8 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'		=> 'Logfile::Access',
     'VERSION_FROM'	=> 'Access.pm', # finds $VERSION
-    'PREREQ_PM'		=> {URI, URI::Escape, Locale::Country}, # e.g., Module::Name => 1.1
+    'PREREQ_PM'		=> { }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'Access.pm', # retrieve abstract from module
-       AUTHOR     => 'David Tiberio <dtiberio5@hotmail.coom>') : ()),
+       AUTHOR     => [ 'Ben Stern <bas-github@fortian.com', 'David Tiberio <dtiberio5@hotmail.com>' ]) : ()),
 );

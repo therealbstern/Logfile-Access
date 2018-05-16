@@ -1,128 +1,187 @@
-Access(3)             User Contributed Perl Documentation            Access(3)
-
-
-
 NAME
-       Logfile::Access - Perl extension for common log format web server logs
+    Logfile::Access - Perl extension for common log format web server logs
 
 SYNOPSIS
-         use Logfile::Access;
+      use Logfile::Access;
 
-               my $log = new Logfile::Access;
+      # This is the default, but it shows how to set it anyway.
+      $Logfile::Access::MimePath = '/etc/httpd/mime.types';
 
-               open (IN, $filename);
-               while (<IN>)
-               {
-                 $log->parse($_);
-                 warn $log->remote_host;
-                 }
-               close IN;
+      my $log = new Logfile::Access;
+
+      if (open IN, '<', $filename) {
+          while (<IN>) {
+              $log->parse($_);
+              print 'Host: ' . $log->remote_host . "\n";
+          }
+          close IN;
+      }
 
 ABSTRACT
-               A module for parsing common log format web server access log files.
+    A module for parsing common log format web server access log files.
 
 DESCRIPTION
-               new() - defines new logfile row object
+  General Functions
+    *   new: Defines new logfile row object.
 
-               load_mime_types() - loads mime types for filename extensions
+    *   parse: Parses a common log format line. Returns "undef" on error.
 
-               parse() - parses a common log format row
+    *   print: Outputs the data as a common log format line.
 
-               print() - outputs the data to a common log format row
+  Read/Write Accessor Functions
+    None of these error-check their input. If you feed this module garbage,
+    you're going to get garbage back.
 
-       rreemmoottee__hhoosstt rreellaatteedd ffuunnccttiioonnss
+    *   remote_host: Sets or gets the remote host in the current object.
 
-               class_a() - returns the Class A of the remote_host
+    *   logname: Sets or gets the "logname" in the current object, which is
+        almost always '-' because almost no one runs an IDENT server (and no
+        one should trust someone else's IDENT server anyway).
 
-               class_b() - returns the Class B of the remote_host
+    *   user: Sets or gets the user name, which is usually '-' unless your
+        webserver is performing some kind of authentication.
 
-               class_c() - returns the Class C of the remote_host
+    *   date: Sets or gets the Common Logile Format date (dd/mmm/yyyy).
 
-               tld() - returns the top level domain of the remote_host
+    *   day: Sets or gets the day of the month, without leading zeroes. (It
+        will accept leading zeroes but removes them before storing them.)
 
-               country_name() - returns the country name
+    *   month: Sets or gets the abbreviated name of the month.
 
-               domain() - return the domain of the remote_host
+    *   year: Sets or gets the year. This doesn't look for leading zeroes,
+        because we're not living in the 1st millenium AD.
 
-               remote_host() - returns / sets the remote host
+    *   time: Sets or gets the time (and expects HH:MM:SS).
 
-       aauutthheennttiiccaattiioonn rreellaatteedd ffuunnccttiioonnss
+    *   hour: Sets or gets the hour. Does the same thing as "day" with
+        regards to leading zeroes.
 
-               logname() - returns / sets the logname
+    *   minute: Sets or gets the minute, but otherwise just like "day".
 
-               user() - returns / sets the user name
+    *   second: Sets or gets the seconds, but otherwise just like "day".
 
-       ddaattee aanndd ttiimmee rreellaatteedd ffuunnccttiioonnss
+    *   offset: Sets or gets the GMT offset.
 
-               date() - returns / sets the CLF date
+    *   method: Sets or gets the request method.
 
-               mday() - returns / sets the day of the month
+    *   scheme: Returns the request object scheme.
 
-               month() - returns / sets the abbreviated name of the month
+    *   object: Sets or gets the full request, path, object, query, and all.
+        This *does* return '/' if that was the request. Like the accessors
+        below, it doesn't do any URI decoding.
 
-               year() - returns / sets the year
+    *   protocol: Sets or gets the request protocol.
 
-               time() - returns / sets the time
+    *   response_code: Sets or gets the numeric response code.
 
-               hour() - returns / sets the hour
+    *   content_length: Sets or gets the content length in bytes.
 
-               minute() - returns / sets the minute
+    *   http_referer: Sets or gets the HTTP referrer, or "undef". Note that
+        the function is named "referer" with a total of 3 Rs, to match the
+        misspelling of the HTTP header.
 
-               second() - returns / sets the seconds
+    *   http_user_agent: Sets or gets the HTTP User Agent string. Returns
+        "undef" if the UA wasn't provided.
 
-               offset() - returns / sets the GMT offset
+  Read-Only Accessors
+    None of these do any decoding, which lets you decide if you want to
+    decode the strings. (Previous versions of the module didn't decode URIs
+    properly anyway.)
 
-       rreeqquueesstt oobbjjeecctt rreellaatteedd ffuunnccttiioonnss
+    *   query_string: Returns the query string from the request object, if
+        any. Returns "undef" if there is no query string.
 
-               method() - returns / sets the request method
+    *   path: Returns the request path (i.e., everything after the last '/'
+        and before the query string, if any). Returns "undef" in the event
+        that the request was for '/'.
 
-               scheme() - returns the request object scheme
+    *   filename: Returns the name of the requested object, without any
+        directory information (nor any query string). Returns "undef" if the
+        request was for a directory and did not specify a file (or, more
+        strictly, an object).
 
-               query_string() - returns the query string from the requets object
+    *   anchor: Returns the name of the anchor of the request (everything
+        after the first '#', if any). Returns "undef" if no anchor was
+        given.
 
-               path() - returns the object path
+    *   mime_type: returns the object's mime type, if any. Returns "undef"
+        if the system "mime.types" file didn't identify the extension of the
+        file. *Note*: the system's "mime.types" file can be specified by
+        setting $Logfile::Access::MimePath before calling "new".
 
-               mime_type() - returns the object mime type
+  Removed Functions
+    If you need these back, open an issue on GitHub
+    (<https://github.com/therealbstern/Logfile-Access/issues>).
 
-               unescape_object() - returns the unescaped object string
+    *   load_mime_types: Loaded mime types for filename extensions.
 
-               escape_object() - returns the escaped object string
+            Rationale for removal: "new" calls this, and it always bailed
+            out early if it was called again, so it never did nothing useful
+            for users of this module.
 
-               object() - returns / sets the requets object
+    *   class_a: Returned the Class A of the "remote_host".
 
-               protocol() - returns / sets the request protocol
+    *   class_b: Returned the Class B of the "remote_host".
 
-       rreessppoonnssee ccooddee rreellaatteedd ffuunnccttiioonnss
+    *   class_c: Returned the Class C of the "remote_host".
 
-               response_code() - returns / sets the numeric response code
+            Rationale for removal: You're probably better off calling
+            "split" if that's what you want, and no one uses classful
+            routing anymore anyway.
 
-               content_length() - returns / sets the content length in bytes
+    *   domain: Returned the domain of the remote_host.
 
-               http_referer() - returns / sets the http referer
+    *   tld: Returned the top level domain of the remote_host.
 
-               http_user_agent() - returns / sets the http user agent string
+            Rationale for removal: You're probably better off calling
+            "split", the tests for whether or not the host had a TLD were
+            wrong, and these things are never going to get simpler.
 
-       EXPORT
+    *   country_name: Returned the country name.
 
-       None by default.
+            Rationale for removal: Removing this removed a dependency upon
+            Locale::Country, these kinds of GeoIP databases are usually
+            wrong unless you're paying for the data, and anyway, you're
+            better off using your favorite GeoIP module anyway.
+
+    *   unescape_object: Returned the unescaped object string.
+
+    *   escape_object: Returned the escaped object string.
+
+            Rationale for removal: Removing this removed a dependency upon
+            URI::Encode and it didn't always do the right thing anyway. If
+            you need the objects decoded, you're better off in control of
+            the decoding yourself.
+
+EXPORTED NAMES
+    None.
 
 PREREQUISITES
-               use Locale::Country;
-               use URI;
-               use URI::Escape;
+    Perl 5.10 or higher. You almost certainly already have it.
 
 SEE ALSO
-       http://www.apache.org/
+    <http://www.apache.org/>
 
-AUTHOR
-       David Tiberio, <dtiberio5@hotmail.com>
+    <https://en.wikipedia.org/wiki/Common_Log_Format>
+
+AUTHORS
+    David Tiberio, <dtiberio5@hotmail.com> through version 1.30.
+
+    Ben Stern, <bas-github@fortian.com> starting with version 2.00.
 
 COPYRIGHT AND LICENSE
-       Copyright 2004 David Tiberio, dtiberio5@hotmail.com
+    Copyright 2004 David Tiberio, dtiberio5@hotmail.com
 
-       This library is free software; you can redistribute it and/or modify it
-       under the same terms as Perl itself.
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
 
+    Copyright 2018 Ben Stern
 
+    Since version 2, "the same terms as Perl itself" means the GPL, version
+    2, since that's how Perl is licensed (as of the writing of this
+    documentation), so this is licensed under the terms of the GNU Public
+    License, version 2. You should have received a file named "LICENSE" with
+    this module. If you did not, you can find one at
+    <https://www.gnu.org/licenses/old-licenses/gpl-2.0.html> (or by writing
+    to 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA).
 
-perl v5.8.0                       2004-10-24                         Access(3)

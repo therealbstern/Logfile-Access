@@ -1,34 +1,5 @@
 package Logfile::Access;
 
-=head1 NAME
-
-Logfile::Access: Perl extension for common log format web server logs
-
-=head1 SYNOPSIS
-
-  use Logfile::Access;
-
-  # This is the default, but it shows how to set it anyway.
-  $Logfile::Access::MimePath = '/etc/httpd/mime.types';
-
-  my $log = new Logfile::Access;
-
-  if (open IN, '<', $filename) {
-      while (<IN>) {
-          $log->parse($_);
-          print 'Host: ' . $log->remote_host . "\n";
-      }
-      close IN;
-  }
-
-=head1 ABSTRACT
-
-A module for parsing common log format web server access log files.
-
-=head1 DESCRIPTION
-
-=cut
-
 # $Id: Access.pm,v 2.00 2004/10/25 18:58:12 therealbstern Exp $
 
 use 5.010; # Perl 5.10 brought named capture groups.
@@ -60,9 +31,11 @@ sub load_mime_types {
 
     if (open (IN, '<', $MimePath)) {
         while (<IN>) {
-            next if $_ =~ /^ *\#/;
-            $_ =~ s/\n|\r//g;
-            my @data = split (/( |\t)+/, $_);
+            next if /^\s*#/;
+            s/#.*//;
+            s/\s*$//;
+            chomp;
+            my @data = split /\s+/;
             my $type = shift @data;
             foreach my $extension (@data) {
                 next unless $extension =~ /\w/;
@@ -71,14 +44,13 @@ sub load_mime_types {
         }
         close IN;
     } else {
-        die "unable to open " . MIME_TYPE_CONFIG_FILENAME . "\n";
+        die "Unable to open $MimePath: $!\n";
     }
 }
 
 use constant HOST => q{(?<host>\S+)};
-use constant IDENT => q{?<ident>\S+)};
+use constant IDENT => q{(?<ident>\S+)};
 use constant USER => q{(?<user>\S+)};
-# This is quite US-centric (m/d/y, English names and capitalization for months, etc.  If this bites anyone, let me know.
 use constant DATE => q{(?<day>\d{2})\/(?<month>\w{3})\/(?<year>\d{4})};
 use constant TIME => q{(?<hrs>[0-2]\d):(?<mins>[0-5]\d):(?<secs>[0-6]\d)};
 use constant OFFSET => q{(?<zone>[-+]\d{4})};
@@ -124,7 +96,6 @@ sub parse {
 
         return 1;
     } else {
-        #die $row;
         return undef;
     }
 }
@@ -143,10 +114,9 @@ sub print {
 }
 
 sub get_set_stuff($$;$) {
-    my $self = shift;
-    my $what = shift;
-    if (@_) {
-        $$self{$what} = shift;
+    my ($self, $what, $val) = @_;
+    if (defined $val) {
+        $$self{$what} = $val;
     }
     return $$self{$what};
 }
@@ -167,11 +137,11 @@ sub http_user_agent { return get_set_stuff(shift, 'http_user_agent', shift); }
 sub object          { return get_set_stuff(shift, 'object',          shift); }
 
 sub get_set_date($$;$) {
-    my $self = shift;
-    my $what = shift;
-    if (@_) {
-        $$self{$what} = shift;
-        $$self{$what} =~ s/^0*//;
+    my ($self, $what, $val) = @_;
+
+    if (defined $val) {
+        $val =~ s/^0// if length $val > 1;
+        $$self{$what} = $val;
         $$self{date} = sprintf('%0.2d/%3.3s/%0.4d', $$self{day}, $$self{month}, $$self{year});
     }
     return $$self{$what};
@@ -194,7 +164,11 @@ sub path {
 sub filename {
     my $self = shift;
 
-    return $1 if $$self{object} =~ /.*\/(.*?)[?#]?/;
+    if (my $name = $$self{object}) {
+        $name =~ s/[?#].*//;
+        return $1 if $name =~ /.*\/(.*)/;
+    }
+
     return undef;
 }
 
@@ -211,10 +185,11 @@ sub month { return get_set_date(shift, 'month', shift); }
 sub year  { return get_set_date(shift, 'year',  shift); }
 
 sub get_set_time($$;$) {
-    my $self = shift;
-    my $what = shift;
-    if (@_) {
-        $$self{$what} = shift;
+    my ($self, $what, $val) = @_;
+
+    if (defined $val) {
+        $val =~ s/^0// if length $val > 1;
+        $$self{$what} = $val;
         $$self{time} = sprintf('%0.2d:%0.2d:%0.2d', $$self{hour}, $$self{minute}, $$self{second});
     }
     return $$self{$what};
@@ -227,16 +202,45 @@ sub second { return get_set_time(shift, 'second', shift); }
 sub mime_type {
     my $self = shift;
 
-    my $object = $self->path;
-    if ($object =~ /\.(\w+)$/) {
+    my $object = $self->filename;
+    if (defined $object and ($object =~ /.*\.(.*)[?#]?/)) {
         my $extension = lc $1;
         return $mime_type{$extension};
-    *
+    }
     return undef;
 }
 
 1;
 __END__
+
+=head1 NAME
+
+Logfile::Access - Perl extension for common log format web server logs
+
+=head1 SYNOPSIS
+
+  use Logfile::Access;
+
+  # This is the default, but it shows how to set it anyway.
+  $Logfile::Access::MimePath = '/etc/httpd/mime.types';
+
+  my $log = new Logfile::Access;
+
+  if (open IN, '<', $filename) {
+      while (<IN>) {
+          $log->parse($_);
+          print 'Host: ' . $log->remote_host . "\n";
+      }
+      close IN;
+  }
+
+=head1 ABSTRACT
+
+A module for parsing common log format web server access log files.
+
+=head1 DESCRIPTION
+
+=cut
 
 =head2 General Functions
 
@@ -302,12 +306,11 @@ going to get garbage back.
 
 =item * content_length: Sets or gets the content length in bytes.
 
-=item * http_referer: Sets or gets the HTTP referrer, or C<undef>.  Note that
-      the function is named C<referer> with a total of 3 Rs, to match the
-      misspelling of the HTTP header.
+=item * http_referer: Sets or gets the HTTP referrer.  Note that the function is
+      named C<referer> with a total of 3 Rs, to match the misspelling of the HTTP
+      header.
 
-=item * http_user_agent: Sets or gets the HTTP User Agent string.  Returns
-      C<undef> if the UA wasn't provided.
+=item * http_user_agent: Sets or gets the HTTP User Agent string.
 
 =back
 
@@ -319,21 +322,17 @@ strings.  (Previous versions of the module didn't decode URIs properly anyway.)
 =over
 
 =item * query_string: Returns the query string from the request object, if any.
-      Returns C<undef> if there is no query string.
+      Returns false if there is no query string.
 
-=item * path: Returns the request path (i.e., everything after the last '/' and
-      before the query string, if any).  Returns C<undef> in the event that the
-      request was for '/'.
+=item * path: Returns the request path, if any (i.e., everything after the last
+      '/' and before the query string).
 
 =item * filename: Returns the name of the requested object, without any directory
-      information (nor any query string).  Returns C<undef> if the request was
-      for a directory and did not specify a file (or, more strictly, an object).
+      information (nor any query string).
 
 =item * anchor: Returns the name of the anchor of the request (everything after
-      the first '#', if any).  Returns C<undef> if no anchor was given.
+      the first '#', if any).
 
-=item * mime_type: returns the object's mime type, if any.  Returns C<undef> if
-      the system C<mime.types> file didn't identify the extension of the file.
       I<Note>: the system's C<mime.types> file can be specified by setting
       C<$Logfile::Access::MimePath> before calling C<new>.
 
@@ -402,6 +401,8 @@ decoded, you're better off in control of the decoding yourself.
 
 =back
 
+=back
+
 =head1 EXPORTED NAMES
 
 None.
@@ -412,15 +413,11 @@ Perl 5.10 or higher.  You almost certainly already have it.
 
 =head1 SEE ALSO
 
-=over
+L<http://www.apache.org/>
 
-=item * L<http://www.apache.org/>
+L<https://en.wikipedia.org/wiki/Common_Log_Format>
 
-=item * L<https://en.wikipedia.org/wiki/Common_Log_Format>
-
-=back
-
-=head1 AUTHOR
+=head1 AUTHORS
 
 David Tiberio, L<E<lt>dtiberio5@hotmail.comE<gt>> through version 1.30.
 
