@@ -1,760 +1,445 @@
 package Logfile::Access;
 
-# $Id: Access.pm,v 1.30 2004/10/25 18:58:12 root Exp $
-
-use 5.008;
-use strict;
-use warnings;
-
-use URI;
-use URI::Escape;
-use Locale::Country;
-
-require Exporter;
-
-our @ISA = qw(Exporter);
-
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
-
-# This allows declaration	use Logfile::Access ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
-our @EXPORT = qw(
-	
-);
-
-our $VERSION = '1.30';
-
-# Preloaded methods go here.
-
-use constant MIME_TYPE_CONFIG_FILENAME => "/etc/httpd/conf/mime.types";
-
-sub new
-{
-
-  my $self = {};
-  my $loop = 1;
-
-  my @column;
-  if (scalar @_ > 1)
-  {
-    foreach my $key (@column)
-    {
-      $self->{$key} = $_[$loop++];
-      }
-    }
-  bless($self);
-  $self->load_mime_types;
-  return $self;
-  }
-
-my %mime_type;
-sub load_mime_types
-{
-  return if %mime_type;
-  if (open (IN, MIME_TYPE_CONFIG_FILENAME))
-  {
-    while (<IN>)
-    {
-      next if $_ =~ /^ *\#/;
-      $_ =~ s/\n|\r//g;
-      my @data = split (/( |\t)+/, $_);
-      my $mime_type = shift @data;
-      foreach my $extension (@data)
-      {
-        next if $extension !~ /\w/;
-        $mime_type{$extension} = $mime_type;
-        }
-      }
-    close IN;
-    }
-  else
-  {
-    warn "unable to open " . MIME_TYPE_CONFIG_FILENAME . "\n";
-    }
-  }
-
-use constant REGEX_IP => q{(\S+)};
-use constant REGEX_DATE => q{(\d{2})\/(\w{3})\/(\d{4})};
-use constant REGEX_TIME => q{(\d{2}):(\d{2}):(\d{2})};
-use constant REGEX_OFFSET => q{([+\-]\d{4})};
-use constant REGEX_METHOD => q{(\S+)};
-use constant REGEX_OBJECT => q{([^ ]+)};
-use constant REGEX_PROTOCOL => q{(\w+\/[\d\.]+)};
-use constant REGEX_STATUS => q{(\d+|\-)};
-use constant REGEX_CONTENT_LENGTH => q{(\d+|\-)};
-use constant REGEX_HTTP_REFERER => q{([^"]+)};
-use constant REGEX_HTTP_USER_AGENT => q{([^"]+)};
-use constant REGEX_COOKIE => q{([^"]+)};
-
-sub parse_iis
-{
-  my $class = "parse";
-  my $self = shift;
-  my $row = shift;
-
-#1998-11-19 22:48:39 206.175.82.5 - 208.201.133.173 GET /global/images/navlineboards.gif - 200 540 324 157 HTTP/1.0 Mozilla/4.0+(compatible;+MSIE+4.01;+Windows+95) USERID=CustomerA;+IMPID=01234 http://www.loganalyzer.net
-  if ($row =~ /^(\d{4})-(\d{2})-(\d{2}) @{[REGEX_TIME]} @{[REGEX_IP]} @{[REGEX_IP]} @{[REGEX_METHOD]} @{[REGEX_OBJECT]} (\S+) @{[REGEX_STATUS]} (\d+) (\d+) (\d+) (\d+) @{[REGEX_PROTOCOL]} @{[REGEX_HTTP_USER_AGENT]} @{[REGEX_COOKIE]} @{[REGEX_HTTP_REFERER]} *$/)
-  {
-    $self->{"date"} = join("/", $1, $2, $3);
-    $self->{"year"} = $1;
-    $self->{"month"} = $2;
-    $self->{"mday"} = $3;
-
-    $self->{"time"} = join(":", $4, $5, $6);
-    $self->{"hour"} = $4;
-    $self->{"minute"} = $5;
-    $self->{"second"} = $6;
-    }
-  else
-  {
-    return 0;
-    }
-
-  return $self->{$class}
-  }
-
-sub parse
-{
-  my $class = "parse";
-  my $self = shift;
-  my $row = shift;
-
-  $row =~ s/\n|\r//g;
-
-  if (
-    ($row =~ /^@{[REGEX_IP]} (\S+) (\S+) \[@{[REGEX_DATE]}:@{[REGEX_TIME]} @{[REGEX_OFFSET]}\] \"@{[REGEX_METHOD]} @{[REGEX_OBJECT]} @{[REGEX_PROTOCOL]}\" @{[REGEX_STATUS]} @{[REGEX_CONTENT_LENGTH]} *$/)
-    ||
-    ($row =~ /^@{[REGEX_IP]} (\S+) (\S+) \[@{[REGEX_DATE]}:@{[REGEX_TIME]} @{[REGEX_OFFSET]}\] \"@{[REGEX_METHOD]} @{[REGEX_OBJECT]} @{[REGEX_PROTOCOL]}\" @{[REGEX_STATUS]} @{[REGEX_CONTENT_LENGTH]} \"?@{[REGEX_HTTP_REFERER]}\"? \"?@{[REGEX_HTTP_USER_AGENT]}\"?$/)
-    )
-  {
-    $self->{"remote_host"} = $1;
-    $self->{"logname"} = $2;
-    $self->{"user"} = $3;
-    $self->{"date"} = join("/", $4, $5, $6);
-    $self->{"mday"} = $4;
-    $self->{"month"} = $5;
-    $self->{"year"} = $6;
-    $self->{"time"} = join(":", $7, $8, $9);
-    $self->{"hour"} = $7;
-    $self->{"minute"} = $8;
-    $self->{"second"} = $9;
-    $self->{"offset"} = $10;
-    $self->{"method"} = $11;
-    $self->{"object"} = $12;
-    $self->{"protocol"} = $13;
-    $self->{"response_code"} = $14;
-    $self->{"content_length"} = $15;
-    $self->{"http_referer"} = $16;
-    $self->{"http_user_agent"} = $17;
-    return 1;
-    }
-  else
-  {
-    #die $row;
-    return 0;
-    }
-  #if (@_) {$self->{$class} = shift}
-  #return $self->{$class}
-  }
-
-sub print
-{
-  my $class = "print";
-  my $self = shift;
-
-  my $datetime = "[" . $self->{"date"} . ":" . $self->{"time"} . " " . $self->{"offset"} . "]";
-  my $object = "\"" . join(" ", $self->{"method"}, $self->{"object"}, $self->{"protocol"}) . "\"";
-  print join(" ", $self->{"remote_host"}, $self->{"logname"}, $self->{"user"}, $datetime, $object, $self->{"response_code"}, $self->{"content_length"}, "\n");
-
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-## REMOTE HOST RELATED FUNCTIONS
-sub class_a
-{
-  my $self = shift;
-  
-  my $host = $self->remote_host;
-  if ($host =~ /^(\d{1,3}\.)(\d{1,3}\.){2}(\d+)(:\d+)?$/)
-  {
-    return $1;
-    }
-  }
-
-sub class_b
-{
-  my $self = shift;
-  
-  my $host = $self->remote_host;
-  if ($host =~ /^((\d{1,3}\.){2})(\d{1,3}\.)(\d+)(:\d+)?$/)
-  {
-    return $1;
-    }
-  }
-
-sub class_c
-{
-  my $self = shift;
-  
-  my $host = $self->remote_host;
-  if ($host =~ /^((\d{1,3}\.){3})(\d+)(:\d+)?$/)
-  {
-    return $1;
-    }
-  }
-
-sub tld
-{
-  my $class = "tld";
-  my $self = shift;
-
-  
-  if (my $host = $self->{"remote_host"})
-  {
-    if ($host =~ /\.([a-z]{2,5})$/i)
-    {
-      my $tld = $1;
-      $tld =~ tr/A-Z/a-z/;
-      return $tld;
-      }
-    }
-  }
-
-sub country_name
-{
-  my $class = "country_name";
-  my $self = shift;
-
-  my $host = $self->{"remote_host"};
-  my $tld = $self->tld;
-  $self->{$class} = code2country($tld);
-  return $self->{$class};
-  }
-
-sub domain
-{
-  my $self = shift;
-
-  my $host = $self->remote_host;
-  $host =~ s/:\d+$//;
-  
-  return if $host =~ /\.\d+(:\d+)?$/;
-  do 
-  {
-    $host =~ s/^([^\.]*\.)// || return $host;
-    }
-  until $host =~ /^[\w\-]+\.[\w]+$/;
-  return $host;
-  }
-
-sub remote_port
-{
-  ## THIS IS A USELESS PIECE OF CODE, REMOTE_HOSTS NEVER HAVE PORT NUMBER
-  my $class = "remote_port";
-  my $self = shift;
-
-  my $host = $self->{"remote_host"};
-  return $1 if $host =~ /:(\d+)\b$/;
-  }
-
-sub remote_host
-{
-  my $class = "remote_host";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub logname
-{
-  my $class = "logname";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub user
-{
-  my $class = "user";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub date
-{
-  my $class = "date";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub fix_mday
-{
-  ## BUG: DOES NOT SUPPORT LEAP YEAR
-  my $self = shift;
-  my $mday = shift;
-
-  $mday = int($mday);
-  $mday = 1 if $mday < 1;
-  $mday = 31 if $mday > 31;
-
-  if ($self->{"month"} =~ /^(jan|mar|may|jul|aug|oct|dec)$/i)
-  {
-    $mday = 31 if $mday > 31;
-    }
-  elsif ($self->{"month"} =~ /^(apr|jun|sep|nov)$/i)
-  {
-    $mday = 30 if $mday > 30;
-    }
-  elsif ($self->{"month"} =~ /^(feb)$/i)
-  {
-    $mday = 29 if $mday > 29;
-    }
-  
-  return $mday;
-  }
-
-sub mday
-{
-  my $class = "mday";
-  my $self = shift;
-  if (@_) 
-  {
-    $self->{$class} = shift;
-    $self->{$class} = fix_mday($self, $self->{$class});
-    $self->{"date"} = sprintf("%2.2d/%3.3s/%4.4d", $self->{"mday"}, $self->{"month"}, $self->{"year"});
-    }
-  return $self->{$class}
-  }
-
-sub fix_month
-{
-  my $month = shift;
-
-  if ($month =~ /^\d+$/)
-  {
-    $month %= 12; 
-    $month = 12 if $month == 0; 
-    }
-
-  if ($month =~ /^(jan|0?1)$/i)
-  {
-    $month = "Jan";
-    }
-  elsif ($month =~ /^(feb|0?2)$/i)
-  {
-    $month = "Feb";
-    }
-  elsif ($month =~ /^(mar|0?3)$/i)
-  {
-    $month = "Mar";
-    }
-  elsif ($month =~ /^(apr|0?4)$/i)
-  {
-    $month = "Apr";
-    }
-  elsif ($month =~ /^(may|0?5)$/i)
-  {
-    $month = "May";
-    }
-  elsif ($month =~ /^(jun|0?6)$/i)
-  {
-    $month = "Jun";
-    }
-  elsif ($month =~ /^(jul|0?7)$/i)
-  {
-    $month = "Jul";
-    }
-  elsif ($month =~ /^(aug|0?8)$/i)
-  {
-    $month = "Aug";
-    }
-  elsif ($month =~ /^(sep|0?9)$/i)
-  {
-    $month = "Sep";
-    }
-  elsif ($month =~ /^(oct|10)$/i)
-  {
-    $month = "Oct";
-    }
-  elsif ($month =~ /^(nov|11)$/i)
-  {
-    $month = "Nov";
-    }
-  elsif ($month =~ /^(dec|12)$/i)
-  {
-    $month = "Dec";
-    }
-  }
-
-sub month
-{
-  my $class = "month";
-  my $self = shift;
-  if (@_) 
-  {
-    $self->{$class} = shift;
-    $self->{$class} = fix_month($self->{$class});
-    $self->{"date"} = sprintf("%2.2d/%3.3s/%4.4d", $self->{"mday"}, $self->{"month"}, $self->{"year"});
-    }
-  return $self->{$class}
-  }
-
-sub fix_year
-{
-  my $year = shift;
-
-  ## CLEAN UP DATA
-  $year =~ s/\D//g;
-  $year = int($year);
-  $year =~ s/^(\d{4}).*$/$1/;
-
-  ## ALLOW FOR SHORTCUTS
-  $year = 1900 + $year if (($year >= 38) && ($year < 100));
-  $year = 2000 + $year if (($year >= 00) && ($year < 38));
-
-  $year = sprintf("%4.4d", $year);
-  return $year;
-  }
-
-sub year
-{
-  my $class = "year";
-  my $self = shift;
-  if (@_) 
-  {
-    $self->{$class} = shift;
-    $self->{$class} = fix_year($self->{$class});
-    $self->{"date"} = sprintf("%2.2d/%3.3s/%4.4d", $self->{"mday"}, $self->{"month"}, $self->{"year"});
-    }
-  return $self->{$class}
-  }
-
-sub time
-{
-  my $class = "time";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub fix_time
-{
-  my $value = shift;
-  $value = "00" if (($value < 0) || ($value > 23));
-  $value = int($value);
-  return $value;
-  }
-
-sub hour
-{
-  my $class = "hour";
-  my $self = shift;
-  if (@_) 
-  {
-    $self->{$class} = shift;
-    $self->{$class} = fix_time($self->{$class});
-    $self->{"time"} = sprintf("%2.2d:%2.2d:%2.2d", $self->{"hour"}, $self->{"minute"}, $self->{"second"});
-    }
-  return $self->{$class}
-  }
-
-sub minute
-{
-  my $class = "minute";
-  my $self = shift;
-  if (@_) 
-  {
-    $self->{$class} = shift;
-    $self->{$class} = fix_time($self->{$class});
-    $self->{"time"} = sprintf("%2.2d:%2.2d:%2.2d", $self->{"hour"}, $self->{"minute"}, $self->{"second"});
-    }
-  return $self->{$class}
-  }
-
-sub second
-{
-  my $class = "second";
-  my $self = shift;
-  if (@_) 
-  {
-    $self->{$class} = shift;
-    $self->{$class} = fix_time($self->{$class});
-    $self->{"time"} = sprintf("%2.2d:%2.2d:%2.2d", $self->{"hour"}, $self->{"minute"}, $self->{"second"});
-    }
-  return $self->{$class}
-  }
-
-sub offset
-{
-  my $class = "offset";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub method
-{
-  my $class = "method";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-## OBJECT SPECIFIC ROUTINES
-sub scheme
-{
-  my $class = "scheme";
-  my $self = shift;
-
-  my $uri = URI->new($self->{"object"});
-  return $uri->scheme;
-  }
-
-sub query_string
-{
-  my $class = "query_string";
-  my $self = shift;
-
-  my $uri = URI->new($self->{"object"});
-  return $uri->query;
-  }
-
-sub path 
-{
-  my $class = "path";
-  my $self = shift;
-
-  my $uri = URI->new($self->{"object"});
-  return $uri->path;
-  }
-
-sub mime_type
-{
-  my $self = shift;
-
-  my $object = $self->path;
-  if ($object =~ /\.(\w+)$/)
-  {
-    my $extension = $1;
-    $extension =~ tr/A-Z/a-z/;
-    return $mime_type{$extension};
-    }
-  }
-
-sub unescape_object
-{
-  my $self = shift;
-
-  my $object = $self->{"object"};
-  return uri_unescape($object);
-  }
-
-sub escape_object
-{
-  my $self = shift;
-
-  my $object = $self->{"object"};
-  return uri_escape($object);
-  }
-
-sub object
-{
-  my $class = "object";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  uri_unescape($self->{$class});
-  return $self->{$class}
-  }
-
-sub protocol
-{
-  my $class = "protocol";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub response_code
-{
-  my $class = "response_code";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub content_length
-{
-  my $class = "content_length";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub http_referer
-{
-  my $class = "http_referer";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-sub http_user_agent
-{
-  my $class = "http_user_agent";
-  my $self = shift;
-  if (@_) {$self->{$class} = shift}
-  return $self->{$class}
-  }
-
-
-# Autoload methods go after =cut, and are processed by the autosplit program.
-
-1;
-__END__
-# Below is stub documentation for your module. You'd better edit it!
-
 =head1 NAME
 
-Logfile::Access - Perl extension for common log format web server logs
+Logfile::Access: Perl extension for common log format web server logs
 
 =head1 SYNOPSIS
 
   use Logfile::Access;
 
-        my $log = new Logfile::Access;
+  # This is the default, but it shows how to set it anyway.
+  $Logfile::Access::MimePath = '/etc/httpd/mime.types';
 
-        open (IN, $filename);
-        while (<IN>)
-        {
+  my $log = new Logfile::Access;
+
+  if (open IN, '<', $filename) {
+      while (<IN>) {
           $log->parse($_);
-          warn $log->remote_host;
-          }
-        close IN;
+          print 'Host: ' . $log->remote_host . "\n";
+      }
+      close IN;
+  }
 
 =head1 ABSTRACT
 
-	A module for parsing common log format web server access log files.
+A module for parsing common log format web server access log files.
 
 =head1 DESCRIPTION
 
-	new() - defines new logfile row object
+=cut
 
-	load_mime_types() - loads mime types for filename extensions
-  
-	parse() - parses a common log format row
+# $Id: Access.pm,v 2.00 2004/10/25 18:58:12 therealbstern Exp $
 
-	print() - outputs the data to a common log format row
+use 5.010; # Perl 5.10 brought named capture groups.
+use strict;
+use warnings;
 
-=head2 remote_host related functions
+require Exporter;
 
-	class_a() - returns the Class A of the remote_host
+our @ISA = qw(Exporter);
 
-	class_b() - returns the Class B of the remote_host
+our @EXPORT_OK = ();
+our @EXPORT = ();
+our $VERSION = '2.00';
 
-	class_c() - returns the Class C of the remote_host
+our $MimePath = '/etc/httpd/mime.types';
 
-	tld() - returns the top level domain of the remote_host
+sub new {
+    my $self = {};
 
-	country_name() - returns the country name
+    bless $self;
+    $self->load_mime_types;
+    return $self;
+}
 
-	domain() - return the domain of the remote_host
+my %mime_type = ();
 
-	remote_host() - returns / sets the remote host
+sub load_mime_types {
+    return if scalar keys %mime_type;
 
-=head2 authentication related functions
+    if (open (IN, '<', $MimePath)) {
+        while (<IN>) {
+            next if $_ =~ /^ *\#/;
+            $_ =~ s/\n|\r//g;
+            my @data = split (/( |\t)+/, $_);
+            my $type = shift @data;
+            foreach my $extension (@data) {
+                next unless $extension =~ /\w/;
+                $mime_type{lc $extension} = $type;
+            }
+        }
+        close IN;
+    } else {
+        die "unable to open " . MIME_TYPE_CONFIG_FILENAME . "\n";
+    }
+}
 
-	logname() - returns / sets the logname
+use constant HOST => q{(?<host>\S+)};
+use constant IDENT => q{?<ident>\S+)};
+use constant USER => q{(?<user>\S+)};
+# This is quite US-centric (m/d/y, English names and capitalization for months, etc.  If this bites anyone, let me know.
+use constant DATE => q{(?<day>\d{2})\/(?<month>\w{3})\/(?<year>\d{4})};
+use constant TIME => q{(?<hrs>[0-2]\d):(?<mins>[0-5]\d):(?<secs>[0-6]\d)};
+use constant OFFSET => q{(?<zone>[-+]\d{4})};
+use constant METHOD => q{(?<method>\S+)};
+use constant OBJECT => q{(?<request>[^\s]+)};
+use constant PROTOCOL => q{(?<proto>\w+\/[\d\.]+)};
+use constant STATUS => q{(?<status>\d+|-)};
+use constant CONTENT_LENGTH => q{(?<length>\d+|-)};
+use constant HTTP_REFERER => q{(?<referer>[^"]+)}; # [sic]
+use constant HTTP_USER_AGENT => q{(?<agent>[^"]+)};
 
-	user() - returns / sets the user name
+sub parse {
+    my $self = shift;
+    my $row = shift;
 
-=head2 date and time related functions
+    chomp $row;
 
-	date() - returns / sets the CLF date
+    if ($row =~ /^@{[HOST]} @{[IDENT]} @{[USER]} \[@{[DATE]}:@{[TIME]} @{[OFFSET]}\] \"@{[METHOD]} @{[OBJECT]} @{[PROTOCOL]}\" @{[STATUS]} @{[CONTENT_LENGTH]}( \"?@{[HTTP_REFERER]}\"? \"?@{[HTTP_USER_AGENT]}\"?)?$/) {
+        $$self{'remote_host'} = $+{'host'};
+        $$self{'logname'} = $+{'ident'};
+        $$self{'user'} = $+{'user'};
+        $$self{'date'} = join('/', $+{'day'}, $+{'month'}, $+{'year'});
+        $$self{'day'} = $+{'day'};
+        $$self{'month'} = $+{'month'};
+        $$self{'year'} = $+{'year'};
+        $$self{'time'} = join(':', $+{'hrs'}, $+{'mins'}, $+{'secs'});
+        $$self{'hour'} = $+{'hrs'};
+        $$self{'minute'} = $+{'mins'};
+        $$self{'second'} = $+{'secs'};
+        $$self{'offset'} = $+{'zone'};
+        $$self{'method'} = $+{'method'};
+        $$self{'object'} = $+{'request'};
+        $$self{'protocol'} = $+{'proto'};
+        $$self{'response_code'} = $+{'status'};
+        $$self{'content_length'} = $+{'length'};
+        $$self{'http_referer'} = $+{'referer'};
+        $$self{'http_user_agent'} = $+{'agent'};
 
-	mday() - returns / sets the day of the month
+        $$self{'day'} =~ s/^0//;
+        $$self{'hour'} =~ s/^0//;
+        $$self{'minute'} =~ s/^0//;
+        $$self{'second'} =~ s/^0//;
 
-	month() - returns / sets the abbreviated name of the month
+        return 1;
+    } else {
+        #die $row;
+        return undef;
+    }
+}
 
-	year() - returns / sets the year
+sub print {
+    my $self = shift;
 
-	time() - returns / sets the time
+    my $datetime = '[' . $$self{'date'} . ':' . $$self{'time'} . ' ' . $$self{'offset'} . ']';
+    my $object = '"' . join(' ', $$self{'method'}, $$self{'object'}, $$self{'protocol'}) . '"';
+    print join(' ', $$self{'remote_host'}, $$self{'logname'}, $$self{'user'}, $datetime, $object, $$self{'response_code'}, $$self{'content_length'});
+    
+    print ' "' . $$self{http_referer} . '" "' . $$self{http_user_agent} . '"'
+        if $$self{http_referer} and $$self{http_user_agent};
 
-	hour() - returns / sets the hour
+    print "\n";
+}
 
-	minute() - returns / sets the minute
+sub get_set_stuff($$;$) {
+    my $self = shift;
+    my $what = shift;
+    if (@_) {
+        $$self{$what} = shift;
+    }
+    return $$self{$what};
+}
 
-	second() - returns / sets the seconds
+sub remote_host     { return get_set_stuff(shift, 'remote_host',     shift); }
+sub logname         { return get_set_stuff(shift, 'logname',         shift); }
+sub user            { return get_set_stuff(shift, 'user',            shift); }
+sub date            { return get_set_stuff(shift, 'date',            shift); }
+sub time            { return get_set_stuff(shift, 'time',            shift); }
+sub offset          { return get_set_stuff(shift, 'offset',          shift); }
+sub method          { return get_set_stuff(shift, 'method',          shift); }
+sub scheme          { return get_set_stuff(shift, 'scheme',          shift); }
+sub protocol        { return get_set_stuff(shift, 'protocol',        shift); }
+sub response_code   { return get_set_stuff(shift, 'response_code',   shift); }
+sub content_length  { return get_set_stuff(shift, 'content_length',  shift); }
+sub http_referer    { return get_set_stuff(shift, 'http_referer',    shift); }
+sub http_user_agent { return get_set_stuff(shift, 'http_user_agent', shift); }
+sub object          { return get_set_stuff(shift, 'object',          shift); }
 
-	offset() - returns / sets the GMT offset
+sub get_set_date($$;$) {
+    my $self = shift;
+    my $what = shift;
+    if (@_) {
+        $$self{$what} = shift;
+        $$self{$what} =~ s/^0*//;
+        $$self{date} = sprintf('%0.2d/%3.3s/%0.4d', $$self{day}, $$self{month}, $$self{year});
+    }
+    return $$self{$what};
+}
 
-=head2 request object related functions
+sub query_string {
+    my $self = shift;
 
-	method() - returns / sets the request method
+    return $1 if $$self{object} =~ /\?(.*)(#.*)?/;
+    return undef;
+}
 
-	scheme() - returns the request object scheme
+sub path {
+    my $self = shift;
 
-	query_string() - returns the query string from the requets object
+    return $1 if $$self{object} =~ /(.*)\//;
+    return undef;
+}
 
-	path() - returns the object path
+sub filename {
+    my $self = shift;
 
-	mime_type() - returns the object mime type
+    return $1 if $$self{object} =~ /.*\/(.*?)[?#]?/;
+    return undef;
+}
 
-	unescape_object() - returns the unescaped object string
+sub anchor {
+    my $self = shift;
 
-	escape_object() - returns the escaped object string
+    return $1 if $$self{object} =~ /#(.*)/;
+    return undef;
+}
 
-	object() - returns / sets the requets object
+sub mday  { return get_set_date(shift, 'day',   shift); }
+sub day   { return get_set_date(shift, 'day',   shift); }
+sub month { return get_set_date(shift, 'month', shift); }
+sub year  { return get_set_date(shift, 'year',  shift); }
 
-	protocol() - returns / sets the request protocol
+sub get_set_time($$;$) {
+    my $self = shift;
+    my $what = shift;
+    if (@_) {
+        $$self{$what} = shift;
+        $$self{time} = sprintf('%0.2d:%0.2d:%0.2d', $$self{hour}, $$self{minute}, $$self{second});
+    }
+    return $$self{$what};
+}
 
-=head2 response code related functions
+sub hour   { return get_set_time(shift, 'hour',   shift); }
+sub minute { return get_set_time(shift, 'minute', shift); }
+sub second { return get_set_time(shift, 'second', shift); }
 
-	response_code() - returns / sets the numeric response code
+sub mime_type {
+    my $self = shift;
 
-	content_length() - returns / sets the content length in bytes
+    my $object = $self->path;
+    if ($object =~ /\.(\w+)$/) {
+        my $extension = lc $1;
+        return $mime_type{$extension};
+    *
+    return undef;
+}
 
-	http_referer() - returns / sets the http referer
+1;
+__END__
 
-	http_user_agent() - returns / sets the http user agent string
+=head2 General Functions
+
+=over
+
+=item * new: Defines new logfile row object.
+
+=item * parse: Parses a common log format line.  Returns C<undef> on error.
+
+=item * print: Outputs the data as a common log format line.
+
+=back
+
+=head2 Read/Write Accessor Functions
+
+None of these error-check their input.  If you feed this module garbage, you're
+going to get garbage back.
+
+=over
+
+=item * remote_host: Sets or gets the remote host in the current object.
 
 
-=head2 EXPORT
+=item * logname: Sets or gets the C<logname> in the current object, which is
+        almost always '-' because almost no one runs an IDENT server (and no one
+        should trust someone else's IDENT server anyway).
 
-None by default.
+=item * user: Sets or gets the user name, which is usually '-' unless your
+        webserver is performing some kind of authentication.
 
+=item * date: Sets or gets the Common Logile Format date (dd/mmm/yyyy).
 
+=item * day: Sets or gets the day of the month, without leading zeroes.  (It
+      will accept leading zeroes but removes them before storing them.)
+
+=item * month: Sets or gets the abbreviated name of the month.
+
+=item * year: Sets or gets the year.  This doesn't look for leading zeroes,
+      because we're not living in the 1st millenium AD.
+
+=item * time: Sets or gets the time (and expects HH:MM:SS).
+
+=item * hour: Sets or gets the hour.  Does the same thing as C<day> with
+      regards to leading zeroes.
+
+=item * minute: Sets or gets the minute, but otherwise just like C<day>.
+
+=item * second: Sets or gets the seconds, but otherwise just like C<day>.
+
+=item * offset: Sets or gets the GMT offset.
+
+=item * method: Sets or gets the request method.
+
+=item * scheme: Returns the request object scheme.
+
+=item * object: Sets or gets the full request, path, object, query, and all.
+      This I<does> return '/' if that was the request.  Like the accessors
+      below, it doesn't do any URI decoding.
+
+=item * protocol: Sets or gets the request protocol.
+
+=item * response_code: Sets or gets the numeric response code.
+
+=item * content_length: Sets or gets the content length in bytes.
+
+=item * http_referer: Sets or gets the HTTP referrer, or C<undef>.  Note that
+      the function is named C<referer> with a total of 3 Rs, to match the
+      misspelling of the HTTP header.
+
+=item * http_user_agent: Sets or gets the HTTP User Agent string.  Returns
+      C<undef> if the UA wasn't provided.
+
+=back
+
+=head2 Read-Only Accessors
+
+None of these do any decoding, which lets you decide if you want to decode the
+strings.  (Previous versions of the module didn't decode URIs properly anyway.)
+
+=over
+
+=item * query_string: Returns the query string from the request object, if any.
+      Returns C<undef> if there is no query string.
+
+=item * path: Returns the request path (i.e., everything after the last '/' and
+      before the query string, if any).  Returns C<undef> in the event that the
+      request was for '/'.
+
+=item * filename: Returns the name of the requested object, without any directory
+      information (nor any query string).  Returns C<undef> if the request was
+      for a directory and did not specify a file (or, more strictly, an object).
+
+=item * anchor: Returns the name of the anchor of the request (everything after
+      the first '#', if any).  Returns C<undef> if no anchor was given.
+
+=item * mime_type: returns the object's mime type, if any.  Returns C<undef> if
+      the system C<mime.types> file didn't identify the extension of the file.
+      I<Note>: the system's C<mime.types> file can be specified by setting
+      C<$Logfile::Access::MimePath> before calling C<new>.
+
+=back
+
+=head2 Removed Functions
+
+If you need these back, open an issue on GitHub
+(L<https://github.com/therealbstern/Logfile-Access/issues>).
+
+=over
+
+=item * load_mime_types: Loaded mime types for filename extensions.
+
+=over
+
+Rationale for removal: C<new> calls this, and it always bailed out early if it
+was called again, so it never did nothing useful for users of this module.
+
+=back
+
+=item * class_a: Returned the Class A of the C<remote_host>.
+
+=item * class_b: Returned the Class B of the C<remote_host>.
+
+=item * class_c: Returned the Class C of the C<remote_host>.
+
+=over
+
+Rationale for removal: You're probably better off calling C<split> if that's
+what you want, and no one uses classful routing anymore anyway.
+
+=back
+
+=item * domain: Returned the domain of the remote_host.
+
+=item * tld: Returned the top level domain of the remote_host.
+
+=over
+
+Rationale for removal: You're probably better off calling C<split>, the tests
+for whether or not the host had a TLD were wrong, and these things are never
+going to get simpler.
+
+=back
+
+=item * country_name: Returned the country name.
+
+=over
+
+Rationale for removal: Removing this removed a dependency upon Locale::Country,
+these kinds of GeoIP databases are usually wrong unless you're paying for the
+data, and anyway, you're better off using your favorite GeoIP module anyway.
+
+=back
+
+=item * unescape_object: Returned the unescaped object string.
+
+=item * escape_object: Returned the escaped object string.
+
+=over
+
+Rationale for removal: Removing this removed a dependency upon L<URI::Encode>
+and it didn't always do the right thing anyway.  If you need the objects
+decoded, you're better off in control of the decoding yourself.
+
+=back
+
+=head1 EXPORTED NAMES
+
+None.
 
 =head1 PREREQUISITES
 
-        use Locale::Country;
-        use URI;
-        use URI::Escape;
+Perl 5.10 or higher.  You almost certainly already have it.
 
 =head1 SEE ALSO
 
-http://www.apache.org/
+=over
+
+=item * L<http://www.apache.org/>
+
+=item * L<https://en.wikipedia.org/wiki/Common_Log_Format>
+
+=back
 
 =head1 AUTHOR
 
-David Tiberio, E<lt>dtiberio5@hotmail.comE<gt>
+David Tiberio, L<E<lt>dtiberio5@hotmail.comE<gt>> through version 1.30.
+
+Ben Stern, L<E<lt>bas-github@fortian.comE<gt>> starting with version 2.00.
 
 =head1 COPYRIGHT AND LICENSE
 
 Copyright 2004 David Tiberio, dtiberio5@hotmail.com
 
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself. 
+
+Copyright 2018 Ben Stern
+
+Since version 2, "the same terms as Perl itself" means the GPL, version 2, since
+that's how Perl is licensed (as of the writing of this documentation), so this
+is licensed under the terms of the GNU Public License, version 2.  You should
+have received a file named "LICENSE" with this module.  If you did not, you can
+find one at L<https://www.gnu.org/licenses/old-licenses/gpl-2.0.html> (or by
+writing to 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA).
 
 =cut
