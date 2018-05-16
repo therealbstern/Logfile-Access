@@ -1,5 +1,10 @@
 Revision history for Perl extension Logfile::Access.
 
+2.0  Wed May 16 04:08 2018
+    - Remove busted methods, fix tests
+
+1.3 ???
+
 1.2  Sun Oct 24 03:26:31 2004
 	- original version; created by h2xs 1.22 with options
 		-AX -n Logfile::Access -v1.2
