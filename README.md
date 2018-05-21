@@ -1,4 +1,4 @@
-A module for parsing common log format web server access log files.
+A module for parsing common log format webserver access log files.
 
 # Synopsis
 
@@ -23,7 +23,7 @@ if (open IN, '<', $filename) {
 
 General Functions
 
-* `new`: Defines new logfile row object.
+* `new`: Creates a new logfile parser object.
 * `parse`: Parses a common log format line.  Returns `undef` on error.
 * `print`: Outputs the data as a common log format line.
 
@@ -59,7 +59,7 @@ going to get garbage back.
 * `response_code`: Sets or gets the numeric response code.
 * `content_length`: Sets or gets the content length in bytes.
 * `http_referer`: Sets or gets the HTTP referrer, or `undef`.  Note that the
-  function is named "referer" with a total of 3 Rs, to match the misspelling of
+  function spells "referer" with a total of 3 Rs, to match the misspelling of
   the HTTP header.
 * `http_user_agent`: Sets or gets the HTTP User Agent string.  Returns `undef`
   if the UA wasn't provided.
@@ -91,7 +91,7 @@ If you need these back, open an issue on GitHub at
 
 * `load_mime_types`: Loaded mime types for filename extensions.
 
-  Rationale for removal: "new" calls this, and it always bailed out early if it
+  Rationale for removal: `new` calls this, and it always bailed out early if it
   was called again, so it never did nothing useful for users of this module.
 
 * `class_a`: Returned the Class A of the `remote_host`.
@@ -138,8 +138,8 @@ Perl 5.10 or higher.  You almost certainly already have it.
 
 # Authors
 
-- David Tiberio, <dtiberio5@hotmail.com> through version 1.30.
-- Ben Stern, <bas-github@fortian.com> starting with version 2.00.
+- David Tiberio <dtiberio5@hotmail.com> through version 1.30.
+- Ben Stern <bas-github@fortian.com> starting with version 2.00.
 
 Copyright and License
 
@@ -152,7 +152,7 @@ Copyright 2018 Ben Stern
 
 Since version 2.0.0, "the same terms as Perl itself" means the GPL, version 2,
 since that's how Perl is licensed (as of the writing of this documentation), so
-this is licensed under the terms of the GNU Public License, version 2. You
-should have received a file named "LICENSE" with this module. If you did not,
-you can find one at `<https://www.gnu.org/licenses/old-licenses/gpl-2.0.html>`
-(or by writing to 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA).
+this is licensed under the terms of the GNU Public License, version 2.  You
+should have received a file named `LICENSE` with this module.  If you did not,
+you can find one at <https://www.gnu.org/licenses/old-licenses/gpl-2.0.html> (or
+by writing to 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA).
