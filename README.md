@@ -87,7 +87,7 @@ strings.  (Previous versions of the module didn't decode URIs properly anyway.)
 ## Removed Functions
 
 If you need these back, open an issue on GitHub at
-`<https://github.com/therealbstern/Logfile-Access/issues>`.
+<https://github.com/therealbstern/Logfile-Access/issues>.
 
 * `load_mime_types`: Loaded mime types for filename extensions.
 
@@ -132,9 +132,9 @@ Perl 5.10 or higher.  You almost certainly already have it.
 
 # See Also
 
-`<http://www.apache.org/>`
+<http://www.apache.org/>
 
-`<https://en.wikipedia.org/wiki/Common_Log_Format>`
+<https://en.wikipedia.org/wiki/Common_Log_Format>
 
 # Authors
 
