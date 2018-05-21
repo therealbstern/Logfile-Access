@@ -138,8 +138,8 @@ Perl 5.10 or higher.  You almost certainly already have it.
 
 # Authors
 
-- David Tiberio, `<dtiberio5@hotmail.com>` through version 1.30.
-- Ben Stern, `<bas-github@fortian.com>` starting with version 2.00.
+- David Tiberio, <dtiberio5@hotmail.com> through version 1.30.
+- Ben Stern, <bas-github@fortian.com> starting with version 2.00.
 
 Copyright and License
 
