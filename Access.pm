@@ -150,7 +150,7 @@ sub get_set_date($$;$) {
 sub query_string {
     my $self = shift;
 
-    return $1 if $$self{object} =~ /\?(.*)(#.*)?/;
+    return $1 if $$self{object} =~ /\?(.*)(?:#.*)?/;
     return undef;
 }
 
