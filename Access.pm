@@ -241,9 +241,9 @@ A module for parsing common log format webserver access log files.
 
 =head1 DESCRIPTION
 
-Common Log Format is:
+Common Log Format is (as discussed on Wikipedia at L<https://en.wikipedia.org/wiki/Common_Log_Format>):
 
-C<127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326> (from Wikipedia: L<https://en.wikipedia.org/wiki/Common_Log_Format>)
+C<127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326>
 
 Another example:
 
