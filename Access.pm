@@ -495,7 +495,9 @@ was called again, so it never did nothing useful for users of this module.
 =back
 
 =item * class_a: Returned the Class A of the C<remote_host>.
+
 =item * class_b: Returned the Class B of the C<remote_host>.
+
 =item * class_c: Returned the Class C of the C<remote_host>.
 
 =over
@@ -506,6 +508,7 @@ what you want, and no one uses classful routing anymore anyway.
 =back
 
 =item * domain: Returned the domain of the remote_host.
+
 =item * tld: Returned the top level domain of the remote_host.
 
 =over
@@ -526,15 +529,18 @@ data, and anyway, you're better off using your favorite GeoIP module anyway.
 
 =back
 
-=item * scheme: Returned the URI scheme.
+=item * scheme: Returned the request object scheme.
+
 =item * unescape_object: Returned the unescaped object string.
+
 =item * escape_object: Returned the escaped object string.
 
 =over
 
 Rationale for removal: Removing these removed a dependency upon L<URI::Encode>
 and it didn't always do the right thing anyway.  If you need the objects
-decoded, you're better off in control of the decoding yourself.
+decoded, you're better off in control of the decoding yourself.  If you want the
+scheme, it's pretty easy to get from the C<object>.
 
 =back
 

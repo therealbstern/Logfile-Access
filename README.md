@@ -66,7 +66,6 @@ going to get garbage back.
 * `second`: Sets or gets the seconds, but otherwise just like `day`.
 * `offset`: Sets or gets the GMT offset.
 * `method`: Sets or gets the request method.
-* `scheme`: Returns the request object scheme.
 * `object`: Sets or gets the full request, path, object, query, and all.  This
   *does* return `/` if that was the request.  Like the accessors below, it
   doesn't do any URI decoding.
@@ -130,12 +129,14 @@ If you need these back, open an issue on GitHub at
   you're paying for the data, and anyway, you're better off using your favorite
   GeoIP module anyway.
 
+* `scheme`: Returned the request object scheme.
 * `unescape_object`: Returned the unescaped object string.
 * `escape_object`: Returned the escaped object string.
 
   Rationale for removal: Removing this removed a dependency upon `URI::Encode`
   and it didn't always do the right thing anyway.  If you need the objects
-  decoded, you're better off in control of the decoding yourself.
+  decoded, you're better off in control of the decoding yourself.  If you want
+  the scheme, it's pretty easy to get from the `object`.
 
 # Exported Names
 
