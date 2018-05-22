@@ -21,9 +21,9 @@ if (open IN, '<', $filename) {
 
 # Description
 
-Common Log Format is:
+Common Log Format is (as discussed on [Wikipedia](https://en.wikipedia.org/wiki/Common_Log_Format)):
 
-`127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326` [from Wikipedia](https://en.wikipedia.org/wiki/Common_Log_Format)
+`127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326`
 
 Another example:
 
