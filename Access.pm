@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = ();
 our @EXPORT = ();
-our $VERSION = '2.02';
+our $VERSION = '2.03';
 
 our $MimePath = '/etc/httpd/mime.types';
 
@@ -103,7 +103,7 @@ sub parse {
 sub print {
     my $self = shift;
 
-    my $datetime = '[' . $$self{'date'} . ':' . $$self{'time'} . ' ' . $$self{'offset'} . ']';
+    my $datetime = '[' . $self->datetime . ']';
     my $object = '"' . join(' ', $$self{'method'}, $$self{'object'}, $$self{'protocol'}) . '"';
     print join(' ', $$self{'remote_host'}, $$self{'logname'}, $$self{'user'}, $datetime, $object, $$self{'response_code'}, $$self{'content_length'});
     
@@ -144,6 +144,24 @@ sub get_set_date($$;$) {
         $$self{date} = sprintf('%0.2d/%3.3s/%0.4d', $$self{day}, $$self{month}, $$self{year});
     }
     return $$self{$what};
+}
+
+sub datetime($;$) {
+    my ($self, $val) = @_;
+
+    if (defined $val) {
+        my @fields = split /[\s\/:]/, $val;
+        $$self{day} = $fields[0];
+        $$self{month} = $fields[1];
+        $$self{year} = $fields[2];
+        $$self{date} = sprintf('%0.2d/%3.3s/%0.4d', $$self{day}, $$self{month}, $$self{year});
+        $$self{hour} = $fields[3];
+        $$self{minute} = $fields[4];
+        $$self{second} = $fields[5];
+        $$self{time} = sprintf('%0.2d:%0.2d:%0.2d', $$self{hour}, $$self{minute}, $$self{second});
+        $$self{offset} = $fields[6];
+    }
+    return $$self{date} . ':' . $$self{time} . ' ' . $$self{offset};
 }
 
 sub query_string {
