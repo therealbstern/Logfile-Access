@@ -65,6 +65,7 @@ going to get garbage back.
 * `minute`: Sets or gets the minute, but otherwise just like `day`.
 * `second`: Sets or gets the seconds, but otherwise just like `day`.
 * `offset`: Sets or gets the GMT offset.
+* `datetime`: Sets or gets the full date/time stamp (with zone).
 * `method`: Sets or gets the request method.
 * `object`: Sets or gets the full request, path, object, query, and all.  This
   *does* return `/` if that was the request.  Like the accessors below, it

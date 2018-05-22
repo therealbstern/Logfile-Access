@@ -450,6 +450,8 @@ going to get garbage back.
 
 =item * offset: Sets or gets the GMT offset.
 
+=item * datetime: Sets or gets the full date/time stamp (with zone).
+
 =item * method: Sets or gets the request method.
 
 =item * object: Sets or gets the full request, path, object, query, and all.
