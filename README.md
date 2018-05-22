@@ -21,7 +21,22 @@ if (open IN, '<', $filename) {
 
 # Description
 
-General Functions
+Common Log Format is:
+
+`127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326` [from Wikipedia](https://en.wikipedia.org/wiki/Common_Log_Format)
+
+Another example:
+
+`127.0.0.1 - - [10/Oct/2000:13:55:36 +0000] "GET /a/apache_pb.html#foo?bar=quux HTTP/1.1" 302 - "http://localhost/index.html" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"`
+
+The mapping between these example lines and the fields that this module provides is:
+
+`remote_host` | `logname` | `user` | [`date` (or `day`/`month`/`year`):`time` (or `hour`:`minute`:`second`)+`offset`] | "`method` | `object` (or `path`/`filename`#`anchor`?`query_string`) | `protocol`" | `response_code` | `content_length` | `http_referer` | `http_user_agent`
+-|-|-|-|-|-|-|-|-
+`127.0.0.1` | `user-identifier` | `frank` | [`10/Oct/2000:13:55:36` `-0700`] | "`GET` | `/apache_pb.gif` | `HTTP/1.0`" | `200` | `2326`
+`127.0.0.1` | `-` | `-` | [`10`/`Oct`/`2000`:`13`:`55`:`36` | `+0000`] | "`GET` `/a`/`apache_pb.html`#`foo`?`bar=quux` | `HTTP/1.1`" | `302` | `-` | "`http://localhost/index.html`" | "`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36`"
+
+## General Functions
 
 * `new`: Creates a new logfile parser object.
 * `parse`: Parses a common log format line.  Returns `undef` on error.
@@ -150,7 +165,7 @@ the same terms as Perl itself.
 
 Copyright 2018 Ben Stern
 
-Since version 2.0.0, "the same terms as Perl itself" means the GPL, version 2,
+Since version 2.00, "the same terms as Perl itself" means the GPL, version 2,
 since that's how Perl is licensed (as of the writing of this documentation), so
 this is licensed under the terms of the GNU Public License, version 2.  You
 should have received a file named `LICENSE` with this module.  If you did not,

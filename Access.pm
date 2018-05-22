@@ -1,6 +1,6 @@
 package Logfile::Access;
 
-# $Id: Access.pm,v 2.00 2004/10/25 18:58:12 therealbstern Exp $
+# $Id: Access.pm,v 2.0.1 2004/10/25 18:58:12 therealbstern Exp $
 
 use 5.010; # Perl 5.10 brought named capture groups.
 use strict;
@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = ();
 our @EXPORT = ();
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 our $MimePath = '/etc/httpd/mime.types';
 
@@ -128,7 +128,6 @@ sub date            { return get_set_stuff(shift, 'date',            shift); }
 sub time            { return get_set_stuff(shift, 'time',            shift); }
 sub offset          { return get_set_stuff(shift, 'offset',          shift); }
 sub method          { return get_set_stuff(shift, 'method',          shift); }
-sub scheme          { return get_set_stuff(shift, 'scheme',          shift); }
 sub protocol        { return get_set_stuff(shift, 'protocol',        shift); }
 sub response_code   { return get_set_stuff(shift, 'response_code',   shift); }
 sub content_length  { return get_set_stuff(shift, 'content_length',  shift); }
@@ -150,7 +149,7 @@ sub get_set_date($$;$) {
 sub query_string {
     my $self = shift;
 
-    return $1 if $$self{object} =~ /\?(.*)(?:#.*)?/;
+    return $1 if $$self{object} =~ /\?(.*)/;
     return undef;
 }
 
@@ -175,7 +174,9 @@ sub filename {
 sub anchor {
     my $self = shift;
 
-    return $1 if $$self{object} =~ /#(.*)/;
+    my $val = $$self{object}
+    my $val = s/\?.*//;
+    return $1 if $val =~ /#(.*)/;
     return undef;
 }
 
@@ -240,6 +241,146 @@ A module for parsing common log format webserver access log files.
 
 =head1 DESCRIPTION
 
+Common Log Format is:
+
+C<127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326> (from Wikipedia: L<https://en.wikipedia.org/wiki/Common_Log_Format>)
+
+Another example:
+
+C<127.0.0.1 - - [10/Oct/2000:13:55:36 +0000] "GET /a/apache_pb.html?foo=bar HTTP/1.1" 302 - "http://localhost/index.html" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36">
+
+=head2 Long Explanation
+
+This ends up being fairly long after C<perldoc> formats it, so if you want to skip it and get to the function explanations, the next section is named L<General Functions>.
+
+The mapping between these example lines and the fields that this module provides is:
+
+=over
+
+=item * C<remote_host>: 127.0.0.1 (in both examples)
+
+=item * C<logname>
+
+=over
+
+=item * user-identifier
+
+=item * -
+
+=back
+
+=item * C<user>
+
+=over
+
+=item * frank
+
+=item * -
+
+=back
+
+=item * C<date>: 10/Oct/2000
+
+=over
+
+=item * C<day>: 10
+
+=item * C<month>: Oct
+
+=item * C<year>: 2000
+
+=back
+
+=item * C<time>: 13:55:36
+
+=over
+
+=item * C<hour>: 13
+
+=item * C<minute>: 55
+
+=item * C<second>: 36
+
+=back
+
+=item * C<offset>
+
+=over
+
+=item * -0700
+
+=item * +0000
+
+=back
+
+=item * C<method>: GET
+
+=item * C<object>: /apache_pb.gif
+
+=over
+
+=item * C<path>: /a
+
+=item * C<filename>: apache_pb.html`
+
+=item * C<anchor>: foo
+
+=item * C<query>: bar=quux
+
+=back
+
+=item * C<protocol>
+
+=over
+
+=item * HTTP/1.0
+
+=item * HTTP/1.1
+
+=back
+
+=item * C<response_code>
+
+=over
+
+=item * 200
+
+=item * 302
+
+=back
+
+=item * C<content_length>
+
+=over
+
+=item * 2326
+
+=item * -
+
+=back
+
+=item * C<http_referer>
+
+=over
+
+=item * C<undef>
+
+=item * http://localhost/index.html
+
+=back
+
+=item * C<http_user_agent>
+
+=over
+
+=item * C<undef>
+
+=item * Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36
+
+=back
+
+=back
+
 =head2 General Functions
 
 =over
@@ -263,7 +404,9 @@ going to get garbage back.
 
 =item * logname: Sets or gets the C<logname> in the current object, which is
         almost always '-' because almost no one runs an IDENT server (and no one
-        should trust someone else's IDENT server anyway).
+        should trust someone else's IDENT server anyway).  (See
+        L<https://tools.ietf.org/html/rfc1413> if you want to know more about
+        IDENT anyway.)
 
 =item * user: Sets or gets the username, which is usually C<-> unless your
         webserver is performing some kind of authentication.
@@ -290,8 +433,6 @@ going to get garbage back.
 =item * offset: Sets or gets the GMT offset.
 
 =item * method: Sets or gets the request method.
-
-=item * scheme: Returns the request object scheme.
 
 =item * object: Sets or gets the full request, path, object, query, and all.
         This I<does> return C</> if that was the request.  Like the accessors
@@ -328,7 +469,7 @@ strings.  (Previous versions of the module didn't decode URIs properly anyway.)
         directory information (nor any query string).
 
 =item * anchor: Returns the name of the anchor of the request (everything after
-      the first '#', if any).
+      the first '#', if any, and before the first '?', if any).
 
 =item * mime_type: returns the object's mime type, if any.  Returns `undef` if
         the system C<mime.types> file didn't identify the extension of the file.
@@ -427,7 +568,7 @@ the same terms as Perl itself.
 
 Copyright 2018 Ben Stern
 
-Since version 2.0., "the same terms as Perl itself" means the GPL, version 2,
+Since version 2.00, "the same terms as Perl itself" means the GPL, version 2,
 since that's how Perl is licensed (as of the writing of this documentation), so
 this is licensed under the terms of the GNU Public License, version 2.  You
 should have received a file named "LICENSE" with this module.  If you did not,
