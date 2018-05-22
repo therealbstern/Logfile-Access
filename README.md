@@ -33,7 +33,7 @@ The mapping between these example lines and the fields that this module provides
 
 `remote_host` | `logname` | `user` | [`date` (or `day`/`month`/`year`):`time` (or `hour`:`minute`:`second`) | +`offset`] | "`method` | `object` (or `path`/`filename`#`anchor`?`query_string`) | `protocol`" | `response_code` | `content_length` | `http_referer` | `http_user_agent`
 --------------|-----------|--------|-----------------------------------------------------------------------|-------------|-----------|---------------------------------------------------------|-------------|-----------------|------------------|----------------|------------------
-`127.0.0.1` | `user-identifier` | `frank` | [`10/Oct/2000:13:55:36` | `-0700`] | "`GET` | `/apache_pb.gif` | `HTTP/1.0`" | `200` | `2326`
+`127.0.0.1` | `user-identifier` | `frank` | [`10/Oct/2000`:`13:55:36` | `-0700`] | "`GET` | `/apache_pb.gif` | `HTTP/1.0`" | `200` | `2326`
 `127.0.0.1` | `-` | `-` | [`10`/`Oct`/`2000`:`13`:`55`:`36` | `+0000`] | "`GET` | `/a`/`apache_pb.html`#`foo`?`bar=quux` | `HTTP/1.1`" | `302` | `-` | "`http://localhost/index.html`" | "`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36`"
 
 ## General Functions
