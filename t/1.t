@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 49;
+use Test::More tests => 47;
 BEGIN { use_ok('Logfile::Access') };
 
 #########################
@@ -34,7 +34,6 @@ is ($log->second(), "46", "second()");
 is ($log->offset(), "+0200", "offset()");
 
 is ($log->method(), "GET", "method()");
-is ($log->scheme(), undef, "scheme()");
 is ($log->query_string(), undef, "query_string()");
 is ($log->path(), "", "path()");
 is ($log->mime_type(), "text/html", "mime_type()");
@@ -64,7 +63,6 @@ is ($log->second(), "33", "second()");
 is ($log->offset(), "-0400", "offset()");
 
 is ($log->method(), "PUT", "method()");
-is ($log->scheme(), undef, "scheme()");
 is ($log->query_string(), "key=banana", "query_string()");
 is ($log->path(), "/path", "path()");
 is ($log->mime_type(), "image/jpeg", "mime_type()");

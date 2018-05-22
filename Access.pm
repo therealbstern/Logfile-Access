@@ -1,6 +1,6 @@
 package Logfile::Access;
 
-# $Id: Access.pm,v 2.0.1 2004/10/25 18:58:12 therealbstern Exp $
+# $Id: Access.pm,v 2.0.2 2004/10/25 18:58:12 therealbstern Exp $
 
 use 5.010; # Perl 5.10 brought named capture groups.
 use strict;
@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = ();
 our @EXPORT = ();
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 our $MimePath = '/etc/httpd/mime.types';
 
@@ -174,8 +174,8 @@ sub filename {
 sub anchor {
     my $self = shift;
 
-    my $val = $$self{object}
-    my $val = s/\?.*//;
+    my $val = $$self{object};
+    $val = s/\?.*//;
     return $1 if $val =~ /#(.*)/;
     return undef;
 }
@@ -526,12 +526,13 @@ data, and anyway, you're better off using your favorite GeoIP module anyway.
 
 =back
 
+=item * scheme: Returned the URI scheme.
 =item * unescape_object: Returned the unescaped object string.
 =item * escape_object: Returned the escaped object string.
 
 =over
 
-Rationale for removal: Removing this removed a dependency upon L<URI::Encode>
+Rationale for removal: Removing these removed a dependency upon L<URI::Encode>
 and it didn't always do the right thing anyway.  If you need the objects
 decoded, you're better off in control of the decoding yourself.
 
