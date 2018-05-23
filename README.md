@@ -66,7 +66,7 @@ going to get garbage back.
 * `second`: Sets or gets the seconds, but otherwise just like `day`.
 * `offset`: Sets or gets the GMT offset.
 * `datetime`: Sets or gets the full date/time stamp (with zone).
-* `method`: Sets or gets the request method.
+* `method`: Sets or gets the request method (`GET`, `POST`, etc.).
 * `object`: Sets or gets the full request, path, object, query, and all.  This
   *does* return `/` if that was the request.  Like the accessors below, it
   doesn't do any URI decoding.

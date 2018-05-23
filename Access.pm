@@ -100,16 +100,15 @@ sub parse {
     }
 }
 
-sub print {
+sub print($) {
     my $self = shift;
 
-    my $datetime = '[' . $self->datetime . ']';
-    my $object = '"' . join(' ', $$self{'method'}, $$self{'object'}, $$self{'protocol'}) . '"';
-    print join(' ', $$self{'remote_host'}, $$self{'logname'}, $$self{'user'}, $datetime, $object, $$self{'response_code'}, $$self{'content_length'});
-    
-    print ' "' . $$self{http_referer} . '" "' . $$self{http_user_agent} . '"'
+    printf('%s %s %s [%s] "%s %s %s" %s %s',
+        $$self{remote_host}, $$self{logname}, $$self{user}, $self->datetime,
+        $$self{method}, $$self{object}, $$self{protocol}, $$self{response_code},
+        $$self{content_length});
+    printf(' "%s" %s"', $$self{http_referer}, $$self{http_user_agent})
         if $$self{http_referer} and $$self{http_user_agent};
-
     print "\n";
 }
 
@@ -121,30 +120,19 @@ sub get_set_stuff($$;$) {
     return $$self{$what};
 }
 
-sub remote_host     { return get_set_stuff(shift, 'remote_host',     shift); }
-sub logname         { return get_set_stuff(shift, 'logname',         shift); }
-sub user            { return get_set_stuff(shift, 'user',            shift); }
-sub date            { return get_set_stuff(shift, 'date',            shift); }
-sub time            { return get_set_stuff(shift, 'time',            shift); }
-sub offset          { return get_set_stuff(shift, 'offset',          shift); }
-sub method          { return get_set_stuff(shift, 'method',          shift); }
-sub protocol        { return get_set_stuff(shift, 'protocol',        shift); }
-sub response_code   { return get_set_stuff(shift, 'response_code',   shift); }
-sub content_length  { return get_set_stuff(shift, 'content_length',  shift); }
-sub http_referer    { return get_set_stuff(shift, 'http_referer',    shift); }
-sub http_user_agent { return get_set_stuff(shift, 'http_user_agent', shift); }
-sub object          { return get_set_stuff(shift, 'object',          shift); }
-
-sub get_set_date($$;$) {
-    my ($self, $what, $val) = @_;
-
-    if (defined $val) {
-        $val =~ s/^0// if length $val > 1;
-        $$self{$what} = $val;
-        $$self{date} = sprintf('%0.2d/%3.3s/%0.4d', $$self{day}, $$self{month}, $$self{year});
-    }
-    return $$self{$what};
-}
+sub remote_host($;$)     { return get_set_stuff(shift, 'remote_host',     shift); }
+sub logname($;$)         { return get_set_stuff(shift, 'logname',         shift); }
+sub user($;$)            { return get_set_stuff(shift, 'user',            shift); }
+sub date($;$)            { return get_set_stuff(shift, 'date',            shift); }
+sub time($;$)            { return get_set_stuff(shift, 'time',            shift); }
+sub offset($;$)          { return get_set_stuff(shift, 'offset',          shift); }
+sub method($;$)          { return get_set_stuff(shift, 'method',          shift); }
+sub protocol($;$)        { return get_set_stuff(shift, 'protocol',        shift); }
+sub response_code($;$)   { return get_set_stuff(shift, 'response_code',   shift); }
+sub content_length($;$)  { return get_set_stuff(shift, 'content_length',  shift); }
+sub http_referer($;$)    { return get_set_stuff(shift, 'http_referer',    shift); }
+sub http_user_agent($;$) { return get_set_stuff(shift, 'http_user_agent', shift); }
+sub object($;$)          { return get_set_stuff(shift, 'object',          shift); }
 
 sub datetime($;$) {
     my ($self, $val) = @_;
@@ -164,21 +152,21 @@ sub datetime($;$) {
     return $$self{date} . ':' . $$self{time} . ' ' . $$self{offset};
 }
 
-sub query_string {
+sub query_string($) {
     my $self = shift;
 
     return $1 if $$self{object} =~ /\?(.*)/;
     return undef;
 }
 
-sub path {
+sub path($) {
     my $self = shift;
 
     return $1 if $$self{object} =~ /(.*)\//;
     return undef;
 }
 
-sub filename {
+sub filename($) {
     my $self = shift;
 
     if (my $name = $$self{object}) {
@@ -189,7 +177,7 @@ sub filename {
     return undef;
 }
 
-sub anchor {
+sub anchor($) {
     my $self = shift;
 
     my $val = $$self{object};
@@ -198,10 +186,21 @@ sub anchor {
     return undef;
 }
 
-sub mday  { return get_set_date(shift, 'day',   shift); }
-sub day   { return get_set_date(shift, 'day',   shift); }
-sub month { return get_set_date(shift, 'month', shift); }
-sub year  { return get_set_date(shift, 'year',  shift); }
+sub get_set_date($$;$) {
+    my ($self, $what, $val) = @_;
+
+    if (defined $val) {
+        $val =~ s/^0// if length $val > 1;
+        $$self{$what} = $val;
+        $$self{date} = sprintf('%0.2d/%3.3s/%0.4d', $$self{day}, $$self{month}, $$self{year});
+    }
+    return $$self{$what};
+}
+
+sub mday($;$)  { return get_set_date(shift, 'day',   shift); }
+sub day($;$)   { return get_set_date(shift, 'day',   shift); }
+sub month($;$) { return get_set_date(shift, 'month', shift); }
+sub year($;$)  { return get_set_date(shift, 'year',  shift); }
 
 sub get_set_time($$;$) {
     my ($self, $what, $val) = @_;
@@ -214,11 +213,11 @@ sub get_set_time($$;$) {
     return $$self{$what};
 }
 
-sub hour   { return get_set_time(shift, 'hour',   shift); }
-sub minute { return get_set_time(shift, 'minute', shift); }
-sub second { return get_set_time(shift, 'second', shift); }
+sub hour($;$)   { return get_set_time(shift, 'hour',   shift); }
+sub minute($;$) { return get_set_time(shift, 'minute', shift); }
+sub second($;$) { return get_set_time(shift, 'second', shift); }
 
-sub mime_type {
+sub mime_type($) {
     my $self = shift;
 
     my $object = $self->filename;
@@ -452,7 +451,7 @@ going to get garbage back.
 
 =item * datetime: Sets or gets the full date/time stamp (with zone).
 
-=item * method: Sets or gets the request method.
+=item * method: Sets or gets the request method (C<GET>, C<POST>, etc.).
 
 =item * object: Sets or gets the full request, path, object, query, and all.
         This I<does> return C</> if that was the request.  Like the accessors
@@ -491,7 +490,7 @@ strings.  (Previous versions of the module didn't decode URIs properly anyway.)
 =item * anchor: Returns the name of the anchor of the request (everything after
       the first '#', if any, and before the first '?', if any).
 
-=item * mime_type: returns the object's mime type, if any.  Returns `undef` if
+=item * mime_type: Returns the object's mime type, if any.  Returns `undef` if
         the system C<mime.types> file didn't identify the extension of the file.
         I<Note>: the system's C<mime.types> file can be specified by setting
         C<$Logfile::Access::MimePath> before calling C<new>.
