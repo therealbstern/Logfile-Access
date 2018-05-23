@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 47;
+use Test::More tests => 51;
 BEGIN { use_ok('Logfile::Access') };
 
 #########################
@@ -45,7 +45,7 @@ is ($log->content_length(), "6543", "content_length()");
 is ($log->http_referer(), "http://www.referer.de/persons.htm", "http_referer()");
 is ($log->http_user_agent(), "Mozilla/4.7 [de]C-CCK-MCD CSO 1.0  (Win98; U)", "http_user_agent()");
 
-ok ($log->parse(q{66.202.26.100 test1 test2 [21/Jan/2002:12:22:33 -0400] "PUT /path/g0010025.jpg?key=banana HTTP/1.1" 200 16543 "http://www.referer.de/" "Mozilla/4.7"}), "parse()");
+ok ($log->parse(q{66.202.26.100 test1 test2 [21/Jan/2002:02:22:33 -0400] "PUT /path/g0010025.jpg?key=banana HTTP/1.1" 200 16543 "http://www.referer.de/" "Mozilla/4.7"}), "parse()");
 
 is ($log->remote_host(), "66.202.26.100", "remote_host()");
 
@@ -56,8 +56,8 @@ is ($log->date(), "21/Jan/2002", "date()");
 is ($log->mday(), "21", "mday()");
 is ($log->month(), "Jan", "month()");
 is ($log->year(), "2002", "year()");
-is ($log->time(), "12:22:33", "time()");
-is ($log->hour(), "12", "hour()");
+is ($log->time(), "02:22:33", "time()");
+is ($log->hour(), "2", "hour()");
 is ($log->minute(), "22", "minute()");
 is ($log->second(), "33", "second()");
 is ($log->offset(), "-0400", "offset()");
@@ -73,4 +73,8 @@ is ($log->response_code(), "200", "response_code()");
 is ($log->content_length(), "16543", "content_length()");
 is ($log->http_referer(), "http://www.referer.de/", "http_referer()");
 is ($log->http_user_agent(), "Mozilla/4.7", "http_user_agent()");
-#is ($log->parse(q{66.202.26.100 test1 test2 [21/Jan/2002:12:22:33 -0400] "PUT /path/g0010025.jpg?key=banana HTTP/1.1" 200 16543 "http://www.referer.de/" "Mozilla/4.7"}), "parse()");
+
+ok ($log->parse(q{66.202.26.100 test1 test2 [21/Jan/2002:12:22:33 -0400] "PUT /path/g0010025.jpg?key=banana HTTP/1.1" 200 16543 "http://www.referer.de/" "Mozilla/4.7"}), "parse()");
+is ($log->hour(4), 4, "set-hour");
+is ($log->minute(9), 9, "set-minute");
+is ($log->year(1234), 1234, "set-year");
