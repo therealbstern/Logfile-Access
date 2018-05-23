@@ -75,6 +75,6 @@ is ($log->http_referer(), "http://www.referer.de/", "http_referer()");
 is ($log->http_user_agent(), "Mozilla/4.7", "http_user_agent()");
 
 ok ($log->parse(q{66.202.26.100 test1 test2 [21/Jan/2002:12:22:33 -0400] "PUT /path/g0010025.jpg?key=banana HTTP/1.1" 200 16543 "http://www.referer.de/" "Mozilla/4.7"}), "parse()");
-is ($log->hour(4), 4, "set-hour");
+is ($log->hour('04'), 4, "set-hour");
 is ($log->minute(9), 9, "set-minute");
 is ($log->year(1234), 1234, "set-year");
