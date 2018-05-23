@@ -2,5 +2,5 @@ Access.pm
 Changes
 Makefile.PL
 MANIFEST
-README
+README.md
 t/1.t
