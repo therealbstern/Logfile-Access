@@ -90,6 +90,7 @@ sub parse {
         $$self{'http_user_agent'} = $+{'agent'};
 
         $$self{'day'} =~ s/^0//;
+        $$self{'year'} =~ s/^0//;
         $$self{'hour'} =~ s/^0//;
         $$self{'minute'} =~ s/^0//;
         $$self{'second'} =~ s/^0//;
@@ -120,19 +121,23 @@ sub get_set_stuff($$;$) {
     return $$self{$what};
 }
 
-sub remote_host($;$)     { return get_set_stuff(shift, 'remote_host',     shift); }
-sub logname($;$)         { return get_set_stuff(shift, 'logname',         shift); }
-sub user($;$)            { return get_set_stuff(shift, 'user',            shift); }
-sub date($;$)            { return get_set_stuff(shift, 'date',            shift); }
-sub time($;$)            { return get_set_stuff(shift, 'time',            shift); }
-sub offset($;$)          { return get_set_stuff(shift, 'offset',          shift); }
-sub method($;$)          { return get_set_stuff(shift, 'method',          shift); }
-sub protocol($;$)        { return get_set_stuff(shift, 'protocol',        shift); }
-sub response_code($;$)   { return get_set_stuff(shift, 'response_code',   shift); }
-sub content_length($;$)  { return get_set_stuff(shift, 'content_length',  shift); }
-sub http_referer($;$)    { return get_set_stuff(shift, 'http_referer',    shift); }
-sub http_user_agent($;$) { return get_set_stuff(shift, 'http_user_agent', shift); }
-sub object($;$)          { return get_set_stuff(shift, 'object',          shift); }
+sub remote_host($;$) { return get_set_stuff(shift, 'remote_host', shift); }
+sub logname($;$) { return get_set_stuff(shift, 'logname', shift); }
+sub user($;$) { return get_set_stuff(shift, 'user', shift); }
+sub date($;$) { return get_set_stuff(shift, 'date', shift); }
+sub time($;$) { return get_set_stuff(shift, 'time', shift); }
+sub offset($;$) { return get_set_stuff(shift, 'offset', shift); }
+sub method($;$) { return get_set_stuff(shift, 'method', shift); }
+sub protocol($;$) { return get_set_stuff(shift, 'protocol', shift); }
+sub response_code($;$) { return get_set_stuff(shift, 'response_code', shift); }
+sub content_length($;$) {
+    return get_set_stuff(shift, 'content_length', shift);
+}
+sub http_referer($;$) { return get_set_stuff(shift, 'http_referer', shift); }
+sub http_user_agent($;$) {
+    return get_set_stuff(shift, 'http_user_agent', shift);
+}
+sub object($;$) { return get_set_stuff(shift, 'object', shift); }
 
 sub datetime($;$) {
     my ($self, $val) = @_;
@@ -142,12 +147,17 @@ sub datetime($;$) {
         $$self{day} = $fields[0];
         $$self{month} = $fields[1];
         $$self{year} = $fields[2];
-        $$self{date} = sprintf('%0.2d/%3.3s/%0.4d', $$self{day}, $$self{month}, $$self{year});
+        $$self{date} = sprintf('%0.2d/%3.3s/%0.4d',
+            $fields[0], $fields[1], $fields[2]);
         $$self{hour} = $fields[3];
         $$self{minute} = $fields[4];
         $$self{second} = $fields[5];
-        $$self{time} = sprintf('%0.2d:%0.2d:%0.2d', $$self{hour}, $$self{minute}, $$self{second});
+        $$self{time} = sprintf('%0.2d:%0.2d:%0.2d',
+            $fields[3], $fields[4], $fields[5]);
         $$self{offset} = $fields[6];
+        foreach (qw(day year hour minute second)) {
+            $$self{$_} =~ s/^0+//;
+        }
     }
     return $$self{date} . ':' . $$self{time} . ' ' . $$self{offset};
 }
@@ -192,7 +202,9 @@ sub get_set_date($$;$) {
     if (defined $val) {
         $val =~ s/^0// if length $val > 1;
         $$self{$what} = $val;
-        $$self{date} = sprintf('%0.2d/%3.3s/%0.4d', $$self{day}, $$self{month}, $$self{year});
+        $$self{date} = sprintf('%0.2d/%3.3s/%0.4d',
+            $$self{day}, $$self{month}, $$self{year});
+        $$self{$what} =~ s/^0+//; # Doesn't do anything to months, but wevs.
     }
     return $$self{$what};
 }
@@ -208,7 +220,9 @@ sub get_set_time($$;$) {
     if (defined $val) {
         $val =~ s/^0// if length $val > 1;
         $$self{$what} = $val;
-        $$self{time} = sprintf('%0.2d:%0.2d:%0.2d', $$self{hour}, $$self{minute}, $$self{second});
+        $$self{time} = sprintf('%0.2d:%0.2d:%0.2d',
+            $$self{hour}, $$self{minute}, $$self{second});
+        $$self{$what} =~ s/^0+//;
     }
     return $$self{$what};
 }
@@ -433,15 +447,17 @@ going to get garbage back.
 =item * day: Sets or gets the day of the month, without leading zeroes.  (It
         will accept leading zeroes but removes them before storing them.)
 
-=item * month: Sets or gets the abbreviated name of the month.
+=item * month: Sets or gets the abbreviated name of the month.  If you pass this
+        a number, it will put in a number, so don't do that.
 
-=item * year: Sets or gets the year.  This doesn't look for leading zeroes,
-        because we're not living in the 1st millenium AD.
+=item * year: Sets or gets the year.  Does the same thing as C<day> with regards
+        to leading zeroes, in case you have a webserver log from more than a
+        thousand years ago.
 
 =item * time: Sets or gets the time (and expects HH:MM:SS).
 
-=item * hour: Sets or gets the hour.  Does the same thing as C<day> with
-        regards to leading zeroes.
+=item * hour: Sets or gets the hour.  Does the same thing as C<day> with regards
+        to leading zeroes.
 
 =item * minute: Sets or gets the minute, but otherwise just like C<day>.
 

@@ -56,9 +56,11 @@ going to get garbage back.
 * `date`: Sets or gets the Common Logile Format date (dd/mmm/yyyy).
 * `day`: Sets or gets the day of the month, without leading zeroes.  (It will
   accept leading zeroes but removes them before storing them.)
-* `month`: Sets or gets the abbreviated name of the month.
-* `year`: Sets or gets the year. This doesn't look for leading zeroes,
-  because we're not living in the 1st millenium AD.
+* `month`: Sets or gets the abbreviated name of the month.  If you pass this a
+  number, it will put in a number, so don't do that.
+* `year`: Sets or gets the year.  Does the same thing as `day` with regards to
+  leading zeroes, in case you have a webserver log from more than a thousand
+  years ago.
 * `time`: Sets or gets the time (and expects HH:MM:SS).
 * `hour`: Sets or gets the hour.  Does the same thing as `day` with regards to
   leading zeroes.
