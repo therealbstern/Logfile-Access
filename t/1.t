@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 51;
+use Test::More tests => 53;
 BEGIN { use_ok('Logfile::Access') };
 
 #########################
@@ -78,3 +78,6 @@ ok ($log->parse(q{66.202.26.100 test1 test2 [21/Jan/2002:12:22:33 -0400] "PUT /p
 is ($log->hour('04'), 4, "set-hour");
 is ($log->minute(9), 9, "set-minute");
 is ($log->year(1234), 1234, "set-year");
+
+ok ($log->parse(q{84.201.133.77 - - [30/May/2018:07:45:48 +0000] "GET / HTTP/1.1" 304 - "-" "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"}), "parse");
+is ($log->content_length, 0, "content_length");

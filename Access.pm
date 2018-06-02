@@ -86,6 +86,7 @@ sub parse {
         $$self{'protocol'} = $+{'proto'};
         $$self{'response_code'} = $+{'status'};
         $$self{'content_length'} = $+{'length'};
+        $$self{'content_length'} = 0 if $+{'length'} eq '-';
         $$self{'http_referer'} = $+{'referer'};
         $$self{'http_user_agent'} = $+{'agent'};
 
@@ -386,7 +387,7 @@ The mapping between these example lines and the fields that this module provides
 
 =item * 2326
 
-=item * -
+=item * 0
 
 =back
 
@@ -426,8 +427,8 @@ The mapping between these example lines and the fields that this module provides
 
 =head2 Read/Write Accessor Functions
 
-None of these error-check their input.  If you feed this module garbage, you're
-going to get garbage back.
+Few of these error-check their input.  If you feed this module garbage, you're
+likely going to get garbage back.
 
 =over
 
